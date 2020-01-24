@@ -33,4 +33,4 @@ openssl x509 -req -days 365 -in grafeas.csr -CA ca.crt -CAkey ca.key -set_serial
 rm grafeas.csr
 
 # Install Grafeas helm chart
-helm install  grafeas https://storage.googleapis.com/grafeas-charts/repository/grafeas-charts-0.1.0.tgz --set certificates.ca="$(cat ca.crt)" --set certificates.cert="$(cat grafeas.crt)" --set "certificates.key=$(cat grafeas.key)" --set service.type="LoadBalancer"
+helm install  grafeas https://storage.googleapis.com/grafeas-charts/repository/grafeas-charts-0.1.4.tgz --set service.port="443" --set certificates.enabled="true" --set certificates.ca="$(cat ca.crt)" --set certificates.cert="$(cat grafeas.crt)" --set "certificates.key=$(cat grafeas.key)" --set service.type="LoadBalancer" --set secret.enabled=true

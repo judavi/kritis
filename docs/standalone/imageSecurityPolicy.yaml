@@ -1,0 +1,9 @@
+apiVersion: kritis.grafeas.io/v1beta1
+kind: ImageSecurityPolicy
+metadata:
+  name: my-isp
+  namespace: default
+spec:
+  packageVulnerabilityRequirements:
+    maximumSeverity: BLOCK_ALL
+    maximumFixNotAvailableSeverity: BLOCK_ALL
