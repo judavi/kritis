@@ -19,6 +19,7 @@ package securitypolicy
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/grafeas/kritis/pkg/kritis/apis/kritis/v1beta1"
 	clientset "github.com/grafeas/kritis/pkg/kritis/client/clientset/versioned"
 	"github.com/grafeas/kritis/pkg/kritis/constants"
@@ -82,12 +83,15 @@ func ValidateImageSecurityPolicy(isp v1beta1.ImageSecurityPolicy, image string, 
 	if maxNoFixSev == "" {
 		maxNoFixSev = "ALLOW_ALL"
 	}
-
+	glog.Infof("Vulnz for image detected: %s", len(vulnz))
+	glog.Infof("MaxNoFixSev %s", maxNoFixSev)
+	glog.Infof("MaxSev %s", maxSev)
 	for _, v := range vulnz {
 		// First, check if the vulnerability is in allowlist
 		if cveInAllowlist(isp, v.CVE) {
 			continue
 		}
+		glog.Infof("Vuln has fix available? %s", v.HasFixAvailable)
 
 		// Allow operators to set a higher threshold for CVE's that have no fix available.
 		if !v.HasFixAvailable {
@@ -140,6 +144,9 @@ func cveInAllowlist(isp v1beta1.ImageSecurityPolicy, cve string) bool {
 }
 
 func severityWithinThreshold(maxSeverity string, severity string) (bool, error) {
+	glog.Infof("severityWithinThreshold:")
+	glog.Infof("MaxSeverity: %s", maxSeverity)
+	glog.Infof("severity: %s", severity)
 	if maxSeverity == constants.BlockAll {
 		return false, nil
 	}

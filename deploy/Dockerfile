@@ -19,9 +19,12 @@ WORKDIR /go/src/github.com/grafeas/kritis
 COPY . .
 RUN make out/kritis-server
 
-FROM gcr.io/distroless/base:latest
+FROM registry.redhat.io/rhel7
 COPY --from=0 /go/src/github.com/grafeas/kritis/out/kritis-server /kritis/kritis-server
-ENV HOME /root
+ENV HOME /tmp
 ENV USER /root
-ENV PATH /usr/local/bin:/kritis
+#ENV PATH /usr/local/bin:/kritis:/bin
+ENV PATH="/kritis:${PATH}"
 ENTRYPOINT ["/kritis/kritis-server"]
+EXPOSE 4040
+USER 0

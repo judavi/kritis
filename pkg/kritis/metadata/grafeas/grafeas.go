@@ -27,6 +27,7 @@ import (
 
 	"google.golang.org/grpc/credentials"
 
+	"github.com/golang/glog"
 	kritisv1beta1 "github.com/grafeas/kritis/pkg/kritis/apis/kritis/v1beta1"
 	"github.com/grafeas/kritis/pkg/kritis/constants"
 	"github.com/grafeas/kritis/pkg/kritis/metadata"
@@ -63,6 +64,8 @@ func ValidateConfig(config kritisv1beta1.GrafeasConfigSpec) error {
 
 // TODO: separate constructor methods for r/w and r/o clients
 func New(config kritisv1beta1.GrafeasConfigSpec, certs *CertConfig) (*Client, error) {
+
+	//glog.Infof("Judavi was here touching the Grafeas connection")
 	if err := ValidateConfig(config); err != nil {
 		return nil, err
 	}
@@ -79,10 +82,10 @@ func New(config kritisv1beta1.GrafeasConfigSpec, certs *CertConfig) (*Client, er
 			return nil, err
 		}
 	} else {
-		certificate, err := tls.LoadX509KeyPair(certs.CertFile, certs.KeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("could not load client key pair: %s", err)
-		}
+		//certificate, err := tls.LoadX509KeyPair(certs.CertFile, certs.KeyFile)
+		//if err != nil {
+		//	return nil, fmt.Errorf("could not load client key pair: %s", err)
+		//}
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(certs.CAFile)
 		if err != nil {
@@ -97,15 +100,28 @@ func New(config kritisv1beta1.GrafeasConfigSpec, certs *CertConfig) (*Client, er
 			return nil, err
 		}
 		creds := credentials.NewTLS(&tls.Config{
-			ServerName:   server,
-			Certificates: []tls.Certificate{certificate},
-			RootCAs:      certPool,
+			//ServerName: server,
+			//Certificates: []tls.Certificate{certificate},
+			RootCAs: certPool,
 		})
+		glog.Info(creds)
+		glog.Infof(certs.CAFile)
+		glog.Infof("secure")
+		glog.Infof(server)
+		glog.Infof("No Server")
+		// conn, err = grpc.Dial(config.Addr, grpc.WithInsecure())
+
 		conn, err = grpc.Dial(config.Addr, grpc.WithTransportCredentials(creds))
+		//defer conn.Close()
+		//conn, err = grpc.Dial(config.Addr,grpc.WithInsecure())
 		if err != nil {
 			return nil, err
 		}
 	}
+	//return &Client{
+	//	client: grafeas.NewGrafeasV1Beta1Client(conn),
+	//	ctx:    ctx,
+	//}, nil
 	return &Client{
 		client: grafeas.NewGrafeasV1Beta1Client(conn),
 		ctx:    ctx,
@@ -122,6 +138,8 @@ func (c Client) Close() {
 func (c Client) Vulnerabilities(containerImage string) ([]metadata.Vulnerability, error) {
 	occs, err := c.fetchVulnerabilityOccurrence(containerImage, PkgVulnerability)
 	if err != nil {
+		glog.Infof("Error in Vulnerabilities")
+		glog.Info(err)
 		return nil, err
 	}
 	var vulnz []metadata.Vulnerability
@@ -231,17 +249,28 @@ func (c Client) fetchVulnerabilityOccurrence(containerImage string, kind string)
 		PageSize: constants.PageSize,
 		Parent:   fmt.Sprintf("projects/%s", DefaultProject),
 	}
+	glog.Info("Filter used")
+	glog.Info("Parent")
+	glog.Info(req.Parent)
+	glog.Info(req.Filter)
+	glog.Info(req.PageSize)
+
 	var occs []*grafeas.Occurrence
 	var nextPageToken string
 	for {
 		req.PageToken = nextPageToken
 		resp, err := c.client.ListOccurrences(c.ctx, req)
 		if err != nil {
+			glog.Info("Error getting occurrences")
+			glog.Info(err)
 			return nil, err
 		}
+		glog.Info("Occurrences found")
+		glog.Info(len(resp.Occurrences))
 		occs = append(occs, resp.Occurrences...)
 		nextPageToken = resp.NextPageToken
 		if len(occs) == 0 || nextPageToken == "" {
+			glog.Info("Stopping listing occurrences")
 			break
 		}
 	}
@@ -262,9 +291,12 @@ func (c Client) fetchAttestationOccurrence(containerImage string, kind string, a
 		if err != nil {
 			return nil, err
 		}
+		glog.Info("ListNoteOccurrences found")
+		glog.Info(len(resp.Occurrences))
 		occs = append(occs, resp.Occurrences...)
 		nextPageToken = resp.NextPageToken
 		if len(occs) == 0 || nextPageToken == "" {
+			glog.Info("Stopping listing Notes")
 			break
 		}
 	}

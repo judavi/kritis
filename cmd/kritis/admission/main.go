@@ -42,7 +42,7 @@ const (
 	// Default values for the configuration
 	DefaultMetadataBackend = constants.ContainerAnalysisMetadata
 	DefaultCronInterval    = "1h"
-	DefaultServerAddr      = ":443"
+	DefaultServerAddr      = ":4040"
 )
 
 var (
@@ -131,6 +131,8 @@ func main() {
 	if err := StartCronJob(config, cronInterval); err != nil {
 		glog.Fatal(errors.Wrap(err, "starting background job"))
 	}
+
+	//glog.Infof("Judavi was here")
 
 	// Start the Kritis Server.
 	glog.Infof("Running the server, address: %s", serverAddr)
